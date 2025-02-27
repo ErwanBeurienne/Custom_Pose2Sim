@@ -18,3 +18,4 @@ dist/
 **/pose-sync/
 **/pose-associated/
 **/kinematics/
+**/.DS_Store
