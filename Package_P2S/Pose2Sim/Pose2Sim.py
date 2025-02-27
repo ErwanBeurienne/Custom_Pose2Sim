@@ -171,6 +171,9 @@ def calibration(config=None):
 
     level, config_dicts = read_config_files(config)
     config_dict = config_dicts[0]
+    
+    print("level : ", level)
+    
     try:
         session_dir = os.path.realpath([os.getcwd() if level==2 else os.path.join(os.getcwd(), '..')][0])
         [os.path.join(session_dir, c) for c in os.listdir(session_dir) if 'calib' in c.lower() and not c.lower().endswith('.py')][0]
@@ -183,6 +186,9 @@ def calibration(config=None):
     if not use_custom_logging:
         setup_logging(session_dir)
     currentDateAndTime = datetime.now()
+
+    print("current dir : ", os.getcwd())
+    print("session dir : ", session_dir)
 
     # Run calibration
     try:
