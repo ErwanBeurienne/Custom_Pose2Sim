@@ -124,20 +124,6 @@ def get_video_creation_time(video_path: str) -> Optional[datetime]:
         logging.error(f"ffmpeg error: {e}")
         return None
 
-def rename_video_extension(video_path: str) -> str:
-    """Rename the extension of a video file to .mp4.
-
-    Args:
-        video_path (str): Path to the video file.
-
-    Returns:
-        str: New video file path with .mp4 extension.
-    """
-    # Change the extension of the video file to .mp4
-    new_video_name = os.path.splitext(video_path)[0] + ".mp4"
-    os.rename(video_path, new_video_name)
-    return new_video_name
-
 def move_videos(source_folder: str, destination_folder: str, target_time: datetime, trial_type: str) -> None:
     """Move videos from camera subfolders to the destination folder.
 
@@ -175,8 +161,6 @@ def move_videos(source_folder: str, destination_folder: str, target_time: dateti
                     closest_video = video_path
 
         if closest_video:
-            # Rename the video file to have a .mp4 extension
-            closest_video_renamed = rename_video_extension(closest_video)
             # Determine the destination path based on the trial type
             if trial_type == "calibration":
                 destination_path = os.path.join(destination_folder, f"ext_{camera_folder}", f"ext_{camera_folder}.mp4")
@@ -186,8 +170,8 @@ def move_videos(source_folder: str, destination_folder: str, target_time: dateti
             # Create the destination folder if it doesn't exist
             os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             # Copy the video file to the destination folder
-            shutil.copy(closest_video_renamed, destination_path)
-            logging.info(f"Video {closest_video_renamed} moved to {destination_path}")
+            shutil.copy(closest_video, destination_path)
+            logging.info(f"Video {closest_video} moved to {destination_path}")
 
 def organize_videos(excel_file_path: str, source_folder: str, destination_folder: str) -> None:
     """Organize videos according to the structure required by Pose2Sim.
