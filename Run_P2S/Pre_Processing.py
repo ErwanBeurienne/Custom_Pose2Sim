@@ -212,6 +212,6 @@ def organize_videos(excel_file_path: str, source_folder: str, destination_folder
             trial_counter = trial_counters.get(athlete_ID, 0) + 1
             trial_counters[athlete_ID] = trial_counter
             trial_name = f"Trial_{athlete_ID}_{trial_counter}"
-            trial_path = create_folder_structure(base_path, trial_name)
+            trial_path = create_folder_structure(batch_path, trial_name)
             paste_config_file(trial_path)
             move_videos(source_folder, trial_path, trial_date_time, trial_type)
