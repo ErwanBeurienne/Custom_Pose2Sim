@@ -139,7 +139,7 @@ def get_video_creation_time(video_path: str) -> Optional[datetime]:
         logging.error(f"ffmpeg error: {e}")
         return None
 
-def move_videos(source_folder: str, destination_folder: str, target_time: datetime, trial_type: str) -> None:
+def move_videos(source_folder: str, destination_folder: str, target_time: datetime, trial_type: str, trial_name: str) -> None:
     """Move videos from camera subfolders to the destination folder.
 
     Args:
@@ -147,6 +147,7 @@ def move_videos(source_folder: str, destination_folder: str, target_time: dateti
         destination_folder (str): Destination folder path.
         target_time (datetime): Target time for video selection.
         trial_type (str): Type of trial (e.g., "calibration").
+        trial_name (str): Name of the trial.
     """
     # Convert the target time to local time
     target_time = convert_to_local_time(target_time)
@@ -176,16 +177,24 @@ def move_videos(source_folder: str, destination_folder: str, target_time: dateti
                     closest_video = video_path
 
         if closest_video:
+            # Construct the new file name
+            new_file_name = f"{target_time.strftime('%Y-%m-%d_%Hh%M')}_{trial_name}_{camera_folder}.mp4"
+            new_video_path = os.path.join(camera_path, new_file_name)
+            
+            # Rename the video file in the origin folder
+            os.rename(closest_video, new_video_path)
+            
             # Determine the destination path based on the trial type
             if trial_type == "calibration":
-                destination_path = os.path.join(destination_folder, f"ext_{camera_folder}", f"ext_{camera_folder}.mp4")
+                destination_path = os.path.join(destination_folder, f"ext_{camera_folder}")
             else:
-                destination_path = os.path.join(destination_folder, "videos", f"{camera_folder}.mp4")
+                destination_path = os.path.join(destination_folder, "videos")
 
             # Create the destination folder if it doesn't exist
-            os.makedirs(os.path.dirname(destination_path), exist_ok=True)
-            # Copy the video file to the destination folder
-            shutil.copy(closest_video, destination_path)
+            os.makedirs(destination_path, exist_ok=True)
+            
+            # Copy the renamed video file to the destination folder
+            shutil.copy(new_video_path, destination_path)
 
 def add_intrinsics_videos(intrinsics_calibration_path: str, intrinsics_videos_path: str) -> None:
     """Add intrinsics calibration videos to the intrinsics calibration folder.
@@ -236,7 +245,7 @@ def organize_videos(excel_file_path: str, source_folder: str, destination_folder
             batch_path = os.path.join(base_path, batch_session)
             intrinsics_calibration_path, extrinsics_calibration_path = create_folder_structure(batch_path)
             paste_config_file(batch_path)
-            move_videos(source_folder, extrinsics_calibration_path, trial_date_time, trial_type)
+            move_videos(source_folder, extrinsics_calibration_path, trial_date_time, trial_type, f"calib_ext_{batch_counter}")
             add_intrinsics_videos(intrinsics_calibration_path, intrinsics_videos_path)
             batch_counter += 1
             logging.info(f"Calibration videos added to {get_last_two_components(batch_path)} ; {index + 1}/{total_files} ({progress:.2f}%)")
@@ -247,5 +256,5 @@ def organize_videos(excel_file_path: str, source_folder: str, destination_folder
             trial_name = f"Trial_{athlete_ID}_{trial_counter}"
             trial_path = create_folder_structure(batch_path, trial_name)
             paste_config_file(trial_path)
-            move_videos(source_folder, trial_path, trial_date_time, trial_type)
+            move_videos(source_folder, trial_path, trial_date_time, trial_type, trial_name)
             logging.info(f"{trial_name}  videos added to {get_last_two_components(batch_path)} ; {index + 1}/{total_files} ({progress:.2f}%)")
