@@ -8,7 +8,22 @@ import logging
 from typing import Tuple, Optional, Union
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
+
+def get_last_two_components(path: str) -> str:
+    """Get the last two components of a path.
+
+    Args:
+        path (str): The input path.
+
+    Returns:
+        str: The last two components of the path.
+    """
+    components = path.split(os.sep)
+    last_2_components = os.sep.join(components[-2:])
+    last_2_components = "../" + last_2_components
+    return last_2_components
+
 
 def import_log_test(log_test_path: str) -> pd.DataFrame:
     """Load the log test file from the specified path.
@@ -171,7 +186,6 @@ def move_videos(source_folder: str, destination_folder: str, target_time: dateti
             os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             # Copy the video file to the destination folder
             shutil.copy(closest_video, destination_path)
-            logging.info(f"Video {closest_video} moved to {destination_path}")
 
 def add_intrinsics_videos(intrinsics_calibration_path: str, intrinsics_videos_path: str) -> None:
     """Add intrinsics calibration videos to the intrinsics calibration folder.
@@ -183,7 +197,6 @@ def add_intrinsics_videos(intrinsics_calibration_path: str, intrinsics_videos_pa
     # Copy the entire directory of intrinsics videos to the intrinsics calibration folder
     if os.path.exists(intrinsics_videos_path):
         shutil.copytree(intrinsics_videos_path, intrinsics_calibration_path, dirs_exist_ok=True)
-        logging.info(f"Intrinsics videos copied from {intrinsics_videos_path} to {intrinsics_calibration_path}")
     else:
         logging.warning(f"The source folder {intrinsics_videos_path} does not exist!")
 
@@ -200,12 +213,14 @@ def organize_videos(excel_file_path: str, source_folder: str, destination_folder
     test_log_file = import_log_test(excel_file_path)
 
     current_date = None
+    total_files = len(test_log_file)
 
     for index, row in test_log_file.iterrows():
         trial_date = row["Date"].strftime("%Y-%m-%d")
         trial_type = row["Trials"]
         athlete_ID = row["Athlete ID"]
         trial_date_time = datetime.combine(row["Date"], row["Time"])
+        progress = (index + 1) / total_files * 100
 
         if trial_date != current_date:
             current_date = trial_date
@@ -224,6 +239,7 @@ def organize_videos(excel_file_path: str, source_folder: str, destination_folder
             move_videos(source_folder, extrinsics_calibration_path, trial_date_time, trial_type)
             add_intrinsics_videos(intrinsics_calibration_path, intrinsics_videos_path)
             batch_counter += 1
+            logging.info(f"Calibration videos added to {get_last_two_components(batch_path)} ; {index + 1}/{total_files} ({progress:.2f}%)")
         else:
             # Create the folder structure for a trial
             trial_counter = trial_counters.get(athlete_ID, 0) + 1
@@ -232,3 +248,4 @@ def organize_videos(excel_file_path: str, source_folder: str, destination_folder
             trial_path = create_folder_structure(batch_path, trial_name)
             paste_config_file(trial_path)
             move_videos(source_folder, trial_path, trial_date_time, trial_type)
+            logging.info(f"{trial_name}  videos added to {get_last_two_components(batch_path)} ; {index + 1}/{total_files} ({progress:.2f}%)")
