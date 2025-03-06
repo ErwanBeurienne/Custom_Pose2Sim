@@ -173,16 +173,32 @@ def move_videos(source_folder: str, destination_folder: str, target_time: dateti
             shutil.copy(closest_video, destination_path)
             logging.info(f"Video {closest_video} moved to {destination_path}")
 
-def organize_videos(excel_file_path: str, source_folder: str, destination_folder: str) -> None:
+def add_intrinsics_videos(intrinsics_calibration_path: str, intrinsics_videos_path: str) -> None:
+    """Add intrinsics calibration videos to the intrinsics calibration folder.
+
+    Args:
+        intrinsics_calibration_path (str): Path to the intrinsics calibration folder.
+        intrinsics_videos_path (str): Path to the source folder containing intrinsics videos.
+    """
+    # Copy the entire directory of intrinsics videos to the intrinsics calibration folder
+    if os.path.exists(intrinsics_videos_path):
+        shutil.copytree(intrinsics_videos_path, intrinsics_calibration_path, dirs_exist_ok=True)
+        logging.info(f"Intrinsics videos copied from {intrinsics_videos_path} to {intrinsics_calibration_path}")
+    else:
+        logging.warning(f"The source folder {intrinsics_videos_path} does not exist!")
+
+def organize_videos(excel_file_path: str, source_folder: str, destination_folder: str, intrinsics_videos_path: str) -> None:
     """Organize videos according to the structure required by Pose2Sim.
 
     Args:
         excel_file_path (str): Path to the Excel file containing the log test data.
         source_folder (str): Source folder path.
         destination_folder (str): Destination folder path.
+        intrinsics_videos_path (str): Path to the source folder containing intrinsics videos.
     """
     # Import the log test data from the Excel file
     test_log_file = import_log_test(excel_file_path)
+
     current_date = None
 
     for index, row in test_log_file.iterrows():
@@ -203,9 +219,10 @@ def organize_videos(excel_file_path: str, source_folder: str, destination_folder
             # Create the folder structure for a calibration batch session
             batch_session = f"BatchSession_{batch_counter}"
             batch_path = os.path.join(base_path, batch_session)
-            _, extrinsics_calibration_path = create_folder_structure(batch_path)
+            intrinsics_calibration_path, extrinsics_calibration_path = create_folder_structure(batch_path)
             paste_config_file(batch_path)
             move_videos(source_folder, extrinsics_calibration_path, trial_date_time, trial_type)
+            add_intrinsics_videos(intrinsics_calibration_path, intrinsics_videos_path)
             batch_counter += 1
         else:
             # Create the folder structure for a trial
